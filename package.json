@@ -1,0 +1,25 @@
+{
+    "name": "com.apptade.sfinput",
+    "version": "v0.1.0-alpha",
+    "displayName": "SFInput",
+    "description": "Simple-Fast and extensionally Input system",
+    "unity": "2021.3",
+    "documentationUrl": "https://github.com/apptade/SFInput/blob/main/README.md",
+    "changelogUrl": "https://github.com/apptade/SFInput/releases",
+    "licensesUrl": "https://github.com/apptade/SFInput/blob/main/LICENSE.md",
+    "dependencies": {
+      "com.unity.inputsystem": "1.13.1"
+   },
+   "keywords": [
+      "Input System",
+      "events",
+      "keyboard",
+      "mouse",
+      "touch"
+    ],
+    "author": {
+      "name": "apptade",
+      "email": "apptade64@gmail.com",
+      "url": "https://github.com/apptade"
+    }
+}
