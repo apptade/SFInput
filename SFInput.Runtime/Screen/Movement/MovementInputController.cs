@@ -9,8 +9,8 @@ public sealed class MovementInputController : InputController, IDisposable
     private readonly InputAction _positionInput;
     private readonly MovementInputData _movementData;
 
-    private bool _deltaInputExecuted;
-    private bool _positionInputExecuted;
+    private Vector2 _lastInputDelta;
+    private int _positionInputExecuteCount;
 
     public MovementInputController(InputAction deltaInput, InputAction positionInput, MovementInputData movementData) 
     {
@@ -27,64 +27,71 @@ public sealed class MovementInputController : InputController, IDisposable
 
     protected override void OnEnable()
     {
-        _deltaInput.started += OnDeltaInputPerformed;
-        _deltaInput.performed += OnDeltaInputPerformed;
+        _deltaInput.started += OnDeltaInputStarted;
         _deltaInput.canceled += OnDeltaInputCanceled;
         _deltaInput.Enable();
 
-        _positionInput.started += OnPositionInputPerformed;
-        _positionInput.performed += OnPositionInputPerformed;
+        _positionInput.started += OnPositionInputStarted;
         _positionInput.canceled += OnPositionInputCanceled;
+        _positionInput.performed += OnPositionInputPerformed;
         _positionInput.Enable();
     }
 
     protected override void OnDisable()
     {
-        _deltaInput.started -= OnDeltaInputPerformed;
-        _deltaInput.performed -= OnDeltaInputPerformed;
+        _deltaInput.started -= OnDeltaInputStarted;
         _deltaInput.canceled -= OnDeltaInputCanceled;
         _deltaInput.Disable();
 
-        _positionInput.started -= OnPositionInputPerformed;
-        _positionInput.performed -= OnPositionInputPerformed;
+        _positionInput.started -= OnPositionInputStarted;
         _positionInput.canceled -= OnPositionInputCanceled;
+        _positionInput.performed -= OnPositionInputPerformed;
         _positionInput.Disable();
     }
 
-    private void OnDeltaInputPerformed(InputAction.CallbackContext callback)
+    private void OnDeltaInputStarted(InputAction.CallbackContext callback)
     {
-        if (PredicateManager.Result() is false) return;
-
-        _deltaInputExecuted = true;
-        _movementData.OnDeltaChanged(callback.ReadValue<Vector2>());
-        TryChangeMovement();
+        if (PredicateManager.Result())
+        {
+            _movementData.OnDeltaChanged(callback.ReadValue<Vector2>());
+            _lastInputDelta = _movementData.Delta;
+        }
     }
 
     private void OnDeltaInputCanceled(InputAction.CallbackContext callback)
     {
-        _deltaInputExecuted = false;
-        _movementData.OnDeltaChanged(Vector2.zero);
+        if (_movementData.Delta != Vector2.zero)
+        {
+            _movementData.OnDeltaChanged(Vector2.zero);
+        }
     }
 
-    private void OnPositionInputPerformed(InputAction.CallbackContext callback)
+    private void OnPositionInputStarted(InputAction.CallbackContext callback)
     {
-        if (PredicateManager.Result() is false) return;
+        if (PredicateManager.Result())
+        {
+            _movementData.OnPositionChanged(callback.ReadValue<Vector2>());
+        }
 
-        _positionInputExecuted = true;
-        _movementData.OnPositionChanged(callback.ReadValue<Vector2>());
-        TryChangeMovement();
+        _positionInputExecuteCount = 1;
     }
 
     private void OnPositionInputCanceled(InputAction.CallbackContext callback)
     {
-        _positionInputExecuted = false;
+        if (_movementData.Position != Vector2.zero)
+        {
+            _movementData.OnPositionChanged(Vector2.zero);
+        }
     }
 
-    private void TryChangeMovement()
+    private void OnPositionInputPerformed(InputAction.CallbackContext callback)
     {
-        if (_deltaInputExecuted && _positionInputExecuted)
+        if (_positionInputExecuteCount > 1 && PredicateManager.Result())
         {
-            _movementData.OnMovementChanged(_movementData.Delta, _movementData.Position);
+            _movementData.OnPositionChanged(callback.ReadValue<Vector2>());
+            _movementData.OnMovementChanged(_lastInputDelta, _movementData.Position);
         }
+
+        _positionInputExecuteCount += 1;
     }
 }}
